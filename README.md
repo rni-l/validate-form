@@ -1,2 +1,5 @@
 # validate-form
-this is a validate-form library
+
+> 验证表单
+
+## 使用
