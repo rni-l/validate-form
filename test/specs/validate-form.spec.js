@@ -1,15 +1,17 @@
 import ValidateForm from './../../src/validate-form'
 
 describe('validate-form', () => {
-  let Form = {}
-  beforeEach(() => {
-    Form = new ValidateForm()
-  })
+  // let Form = {}
+  // beforeEach(() => {
+  //   Form = new ValidateForm()
+  // })
 
   describe('base', () => {
-    it('Verify that the object have some properties', () => {
-      const { formObj, outputType, isHaveError, errorTxt, errorTxtArray, baseType, baseTypeFunc } = Form
-      expect(formObj).to.be.an('object')
+    it('check properties', () => {
+      const Form = new ValidateForm({})
+      const { values, rules, outputType, isHaveError, errorTxt, errorTxtArray, baseType, baseTypeFunc } = Form
+      // expect(values).to.be.an('object')
+      expect(rules).to.be.an('object')
       expect(outputType).to.be.a('string')
       expect(isHaveError).to.be.a('boolean')
       expect(errorTxt).to.be.a('string')
@@ -18,92 +20,277 @@ describe('validate-form', () => {
       expect(baseTypeFunc).to.be.an('object')
     })
 
-    it('In initialization, formatting a validate-form object through the form value and options', () => {
-      const formValue = {
-        a: 123,
-        b: '234',
-        c: []
+    it('check rules', () => {
+      try {
+        new ValidateForm()
+      } catch (error) {
+        expect(error).to.equal('请传入规则')
       }
-      const options = {
-        a: [],
-        b: [],
-        c: []
+    })
+  })
+
+  describe('validate form', () => {
+    let Form = {}
+    let rules = {}
+    beforeEach(() => {
+      rules = {
+        name: [
+          { require: true, type: String, error: '请输入name' },
+          { require: true, type: String, min: 2, max: 10, error: '请输入 2 - 10 长度的 name' }
+        ],
+        number: [
+          { require: true, type: Number, error: '请输入 number' },
+          { require: true, type: Number, min: 1, max: 10, error: '请输入 1 - 10 的 number' }
+        ],
+        array: [
+          { require: true, type: Array, error: '请输入 array' }
+        ],
+        object: [
+          { require: true, type: Object, error: '请输入 object' }
+        ],
+        phone: [
+          { require: true, error: '请输入手机号' },
+          {
+            require: true, func: (value) => {
+              if (/1\d{10}/.test(value)) return false
+              return '请输入正确的手机号'
+            }
+          }
+        ]
       }
-      const data = Form.$formatFromValueAndOptions(formValue, options)
-      expect(data.a).to.be.an('object')
-      expect(data.a.value).to.equal(123)
-      expect(data.a.validates).to.be.an('array')
-      expect(data.b).to.be.an('object')
-      expect(data.b.value).to.equal('234')
-      expect(data.b.validates).to.be.an('array')
-      expect(data.c).to.be.an('object')
-      expect(data.c.value).to.be.an('array')
-      expect(data.c.validates).to.be.an('array')
+      Form = new ValidateForm(rules)
     })
 
-    it('In initialization, formatting a validate-form object through from the form obj', () => {
-      const { form } = Form.$initParams({
-        a: {
-          validate: [], value: 123
-        },
-        b: {
-          validate: [], value: '234'
-        },
-        c: {
-          validate: [], value: []
+    describe('validate difference condition', () => {
+      let values = {}
+      beforeEach(() => {
+        values = {
+          name: 't1',
+          number: 1,
+          array: [],
+          object: {},
+          phone: '15625979634'
         }
       })
-      expect(form.a).to.be.an('object')
-      expect(form.a.value).to.equal(123)
-      expect(form.a.validate).to.be.an('array')
-      expect(form.b).to.be.an('object')
-      expect(form.b.value).to.equal('234')
-      expect(form.b.validate).to.be.an('array')
-      expect(form.c).to.be.an('object')
-      expect(form.c.value).to.be.an('array')
-      expect(form.c.validate).to.be.an('array')
-    })
-
-    it('In the output, configuration outputType to "normal" , if have an error, it will break out and output to the first error message', () => {
-      const data = Form.validate({
-        a: {
-          validates: [
-            { required: true, message: '请输入 a 的值' }
-          ],
-          value: ''
-        },
-        b: {
-          validates: [
-            { required: true, message: '请输入 b 的值' }
-          ],
-          value: ''
-        }
+      it('success', () => {
+        const { isSuccess, errorTxt } = Form.validate(values)
+        expect(isSuccess).to.be.true
+        expect(errorTxt).to.be.empty
       })
-      expect(data).to.equal('请输入 a 的值')
-    })
+      it('check string', () => {
+        values.name = ''
+        const { isSuccess, errorTxt } = Form.validate(values)
+        expect(isSuccess).to.be.false
+        expect(errorTxt).to.equal(rules.name[0].error)
+      })
+      it('check number', () => {
+        values.number = ''
+        const res1 = Form.validate(values)
+        expect(res1.isSuccess).to.be.false
+        expect(res1.errorTxt).to.equal(rules.number[0].error)
+        values.number = 1
+        const res2 = Form.validate(values)
+        expect(res2.isSuccess).to.be.true
+        expect(res2.errorTxt).to.be.empty
+      })
+      it('check array', () => {
+        values.array = ''
+        const { isSuccess, errorTxt } = Form.validate(values)
+        expect(isSuccess).to.be.false
+        expect(errorTxt).to.equal(rules.array[0].error)
+      })
+      it('check object', () => {
+        values.object = ''
+        const { isSuccess, errorTxt } = Form.validate(values)
+        expect(isSuccess).to.be.false
+        expect(errorTxt).to.equal(rules.object[0].error)
+      })
+      it('check exist', () => {
+        values.phone = ''
+        const { isSuccess, errorTxt } = Form.validate(values)
+        expect(isSuccess).to.be.false
+        expect(errorTxt).to.equal(rules.phone[0].error)
+      })
+      describe('check min and max to string', () => {
+        it('min error', () => {
+          values.name = '1'
+          const res1 = Form.validate(values)
+          expect(res1.isSuccess).to.be.false
+          expect(res1.errorTxt).to.equal(rules.name[1].error)
+        })
+        it('max error', () => {
+          values.name = '12345678901'
+          const res2 = Form.validate(values)
+          expect(res2.isSuccess).to.be.false
+          expect(res2.errorTxt).to.equal(rules.name[1].error)
+        })
+        it('success', () => {
+          values.name = '1234567890'
+          const res3 = Form.validate(values)
+          expect(res3.isSuccess).to.be.true
+          expect(res3.errorTxt).to.be.empty
+        })
+        it('no min', () => {
+          // 测试没有 min
+          delete rules.name[1].min
+          values.name = '1'
+          Form.setRules(rules)
+          const res4 = Form.validate(values)
+          expect(res4.isSuccess).to.be.true
+          expect(res4.errorTxt).to.be.empty
+        })
+        it('no min and error', () => {
+          // 没有 min 且 不符合
+          delete rules.name[1].min
+          values.name = '12345678901'
+          const res4_1 = Form.validate(values)
+          expect(res4_1.isSuccess).to.be.false
+          expect(res4_1.errorTxt).to.equal(rules.name[1].error)
+        })
+        it('no max', () => {
+          // 测试没有 max
+          delete rules.name[1].max
+          rules.name[1].min = 2
+          values.name = '12345678901234567890'
+          Form.setRules(rules)
+          const res5 = Form.validate(values)
+          expect(res5.isSuccess).to.be.true
+          expect(res5.errorTxt).to.be.empty
+        })
+        it('no max and error', () => {
+          // 没有 max 且不符合
+          delete rules.name[1].max
+          values.name = '1'
+          const res5_1 = Form.validate(values)
+          expect(res5_1.isSuccess).to.be.false
+          expect(res5_1.errorTxt).to.equal(rules.name[1].error)
+        })
+      })
+      describe('check min and max to number', () => {
+        it('min error', () => {
+          values.number = 0
+          const res1 = Form.validate(values)
+          expect(res1.isSuccess).to.be.false
+          expect(res1.errorTxt).to.equal(rules.number[1].error)
+        })
+        it('max error', () => {
+          values.number = 11
+          const res2 = Form.validate(values)
+          expect(res2.isSuccess).to.be.false
+          expect(res2.errorTxt).to.equal(rules.number[1].error)
+        })
+        it('success', () => {
+          values.number = 10
+          const res3 = Form.validate(values)
+          expect(res3.isSuccess).to.be.true
+          expect(res3.errorTxt).to.to.empty
+        })
+        it('no min', () => {
+          // 测试没有 min
+          delete rules.number[1].min
+          values.number = 0
+          Form.setRules(rules)
+          const res4 = Form.validate(values)
+          expect(res4.isSuccess).to.be.true
+          expect(res4.errorTxt).to.be.empty
+        })
+        it('no min and error', () => {
+          // 没有 min 且 不符合
+          delete rules.number[1].min
+          values.number = 12345678911
+          const res4_1 = Form.validate(values)
+          expect(res4_1.isSuccess).to.be.false
+          expect(res4_1.errorTxt).to.be.equal(rules.number[1].error)
+        })
+        it('no max', () => {
+          // 测试没有 max
+          delete rules.number[1].max
+          rules.number[1].min = 2
+          values.number = 1234567891234
+          console.log(rules.number[1])
+          Form.setRules(rules)
+          const res5 = Form.validate(values)
+          expect(res5.isSuccess).to.be.true
+          expect(res5.errorTxt).to.be.empty
+        })
+        it('no max and error', () => {
+          // 没有 max 且不符合
+          delete rules.number[1].max
+          values.number = 0
+          const res5_1 = Form.validate(values)
+          expect(res5_1.isSuccess).to.be.false
+          expect(res5_1.errorTxt).to.equal(rules.number[1].error)
+        })
+      })
+      it('check multiple rules', () => {
+        values.phone = '1562597963'
+        const res1 = Form.validate(values)
+        expect(res1.isSuccess).to.be.false
+        expect(res1.errorTxt).to.equal('请输入正确的手机号')
+        values.phone = '15625979634'
+        const res2 = Form.validate(values)
+        expect(res2.isSuccess).to.be.true
+        expect(res2.errorTxt).to.be.empty
+      })
+      it('check multiple error', () => {
+        values.name = ''
+        values.phone = ''
+        const { isSuccess, errorTxt } = Form.validate(values, true)
+        expect(isSuccess).to.be.false
+        expect(errorTxt).to.be.an('array')
+        expect(errorTxt[0]).to.equal(rules.name[0].error)
+        expect(errorTxt[1]).to.equal(rules.phone[0].error)
+      })
 
-    it('In the output, configuration outputType to "all", if have an error, it will break out and output the all error messages', () => {
-      const data = Form.validate({
-        a: {
-          validates: [
-            { required: true, message: '请输入 a 的值' }
-          ],
-          value: ''
-        },
-        b: {
-          validates: [
-            { required: true, message: '请输入 b 的值' }
-          ],
-          value: ''
-        }
-      }, { outputType: 'array' })
-      expect(data).to.be.an('array')
-      expect(data[0]).to.equal('请输入 a 的值')
-      expect(data[1]).to.equal('请输入 b 的值')
+      // it('check static validate function', () => {
+      //   const { isSuccess, errorTxt } = ValidateForm.validate(rules, values)
+      //   expect(isSuccess).to.be.true
+      //   expect(errorTxt).to.be.empty
+      // })
+
+      it('can update rules', () => {
+        const _rules = rules
+        _rules.name[1].min = 3
+        Form.setRules(_rules)
+        const { isSuccess, errorTxt } = Form.validate(values)
+        expect(isSuccess).to.be.false
+        expect(errorTxt).to.equal(_rules.name[1].error)
+      })
+
+      it('check not required', () => {
+        rules.name[1].require = false
+        values.name = '1'
+        Form.setRules(rules)
+        const res1 = Form.validate(values)
+        expect(res1.isSuccess).to.be.false
+        expect(res1.errorTxt).to.equal(rules.name[1].error)
+        rules.name[0].require = false
+        values.name = ''
+        Form.setRules(rules)
+        const res2 = Form.validate(values)
+        expect(res2.isSuccess).to.be.true
+        expect(res2.errorTxt).to.be.empty
+      })
+
+      it('no rule', () => {
+        const res1 = Form.validate(values)
+        expect(res1.isSuccess).to.be.true
+        expect(res1.errorTxt).to.be.empty
+        rules.name = []
+        values.name = ''
+        Form.setRules(rules)
+        const res2 = Form.validate(values)
+        expect(res2.isSuccess).to.be.false
+        expect(res2.errorTxt).to.equal('name 不能为空')
+      })
     })
   })
 
   describe('Validate base type', () => {
+    let Form = {}
+    beforeEach(() => {
+      Form = new ValidateForm()
+    })
     const validate = (type, value) => {
       return Form.baseTypeFunc[type](value)
     }
@@ -168,162 +355,4 @@ describe('validate-form', () => {
     })
   })
 
-  describe('validate rule', () => {
-    let testObj = {}
-
-    beforeEach(() => {
-      testObj = {
-        a: {
-          validates: [],
-          value: ''
-        }
-      }
-    })
-
-    it('Validate the values is false, null or undefined', () => {
-      expect(Form.$checkIsEmpty(false)).to.be.true
-      expect(Form.$checkIsEmpty(null)).to.be.true
-      expect(Form.$checkIsEmpty(undefined)).to.be.true
-      expect(Form.$checkIsEmpty('')).to.be.true
-    })
-
-    describe('the validates length is empty', () => {
-      it('If the value is empty,it will output ${key} 不能为空', () => {
-        const data = Form.validate(testObj)
-        expect(data).to.equal('a 不能为空')
-      })
-
-      it('If the value is exits,it will output false', () => {
-        testObj.a.value = '1'
-        const data = Form.validate(testObj)
-        expect(data).to.be.not.ok
-      })
-    })
-
-    describe('The validates length is more than 0', () => {
-      beforeEach(() => {
-        testObj = {
-          a: {
-            validates: [
-              { required: true, message: '请输入 a 的值' }
-            ],
-            value: ''
-          }
-        }
-      })
-
-      it('The value is exits and the required is true, it will output the first validate message', () => {
-        const data = Form.validate(testObj)
-        expect(data).to.equal(testObj.a.validates[0].message)
-      })
-
-      it('The value is exits and the required is false, it will output the next validate message', () => {
-        testObj.a.validates = [
-          { required: false, message: '请输入 a 的值' },
-          { required: true, message: '请输入 a 的值1' }
-        ]
-        const data = Form.validate(testObj)
-        expect(data).to.equal(testObj.a.validates[1].message)
-      })
-      
-      it('The value type is in baseType, it will auto validate the value', () => {
-        expect(Form.validate(testObj)).to.be.ok
-        testObj.a.validates[0].type = 'string'
-        expect(Form.validate(testObj)).to.be.ok
-        testObj.a.value = '1234'
-        expect(Form.validate(testObj)).to.be.not.ok
-        testObj.a.validates[0].type = 'number'
-        expect(Form.validate(testObj)).to.be.ok
-        testObj.a.value = 1234
-        expect(Form.validate(testObj)).to.be.not.ok
-        testObj.a.validates[0].type = 'boolean'
-        expect(Form.validate(testObj)).to.be.ok
-        testObj.a.value = false
-        expect(Form.validate(testObj)).to.be.not.ok
-        testObj.a.validates[0].type = 'array'
-        expect(Form.validate(testObj)).to.be.ok
-        testObj.a.value = []
-        expect(Form.validate(testObj)).to.be.not.ok
-        testObj.a.validates[0].type = 'object'
-        expect(Form.validate(testObj)).to.be.ok
-        testObj.a.value = {}
-        expect(Form.validate(testObj)).to.be.not.ok
-      })
-
-      describe('The value type is function', () => {
-        it('The validateFunc is empty, it will validate the value is empty', () => {
-          testObj.a.validates[0].type = 'function'
-          expect(Form.validate(testObj)).to.be.ok
-        })
-
-        it('The validateFunc is exits, it will validate the value from func', () => {
-          testObj.a.validates[0].type = 'function'
-          testObj.a.validates[0].func = (value) => {
-            return value === '123'
-          }
-          expect(Form.validate(testObj)).to.be.ok
-          testObj.a.value = '123'
-          expect(Form.validate(testObj)).to.be.not.ok
-        })
-      })
-    })
-  })
-
-  // 这里还没想好要怎么弄...
-  describe('Verify complex value', () => {
-    let test = {}
-    beforeEach(() => {
-      test = {
-        a: {
-          validates: [],
-          value: 1
-        },
-        b: {
-          validates: [
-            { required: true, message: '请输入 b 值' },
-            { required: true, message: '请输入数字 b', type: 'number' }
-          ],
-          value: 1
-        },
-        c: {
-          validates: [
-            { required: true, message: '请输入 c 值', type: 'array' }
-          ],
-          value: []
-        },
-        d: {
-          validates: [
-            { required: true, message: '请输入 d 值为 123', type: 'funciton', func: (v) => {
-              return v === '123'
-            }}
-          ],
-          value: ''
-        }
-      }
-    })
-
-    it('test-one', () => {
-      test.a.value = ''
-      expect(Form.validate(test)).to.equal('a 不能为空')
-    })
-    
-    it('test-two', () => {
-      test.b.value = '1'
-      expect(Form.validate(test)).to.equal(test.b.validates[1].message)
-    })
-
-    it('test-three', () => {
-      test.c.value = ''
-      expect(Form.validate(test)).to.equal(test.c.validates[0].message)
-    })
-
-    it('test-four', () => {
-      expect(Form.validate(test)).to.equal(test.d.validates[0].message)
-    })
-
-    it('test-five', () => {
-      test.d.value = '123'
-      expect(Form.validate(test)).to.be.not.ok
-    })
-  })
 })

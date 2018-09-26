@@ -3,12 +3,16 @@
  */
 import { baseType, baseTypeFunc } from './baseType'
 
-const ValidateForm = function(opts = {}) {
+/**
+ * @param Object opts 初始化配置
+ * @param string opts.outputType 验证结果，输出类型
+ */
+const ValidateForm = function(rules, opts = {}) {
   // 类型
   this.baseType = baseType
   this.baseTypeFunc = baseTypeFunc
   // 表单数据
-  this.formObj = {}
+  this.rules = rules
   this.outputType = opts.outputType || 'normal'
   // 是否有错误
   this.isHaveError = false
@@ -18,117 +22,100 @@ const ValidateForm = function(opts = {}) {
 }
 
 ValidateForm.prototype = {
-  validate(formObject, options, config) {
-    if (!formObject) {
-      console.warn('请传入需要验证的表单值')
-      return false
-    }
-    const data = this.$initParams(formObject, options, config)
-    if (!data) return false
-    this.formObj = data.form
-    this.outputType = data.config.outputType || 'normal'
+  validate(values, isMulitple) {
+    const outputType = isMulitple || this.outputType
 
     // 是否跳出
     let isBreak = false
-    const isNormal = this.outputType === 'normal'
+    const isNormal = outputType === 'normal'
     this.errorTxt = ''
     this.errorTxtArray = []
-    Object.keys(this.formObj).some(key => {
-      const item = this.formObj[key]
-      const value = item.value
-      let errorTxt = this.$getEmptyPrompt(key)
+    Object.keys(values).some(key => {
+      const item = this.rules[key]
+      const value = values[key]
+      let errorTxt = this.$getEmptyErrorPrompt(key)
+      // 没有当前对象的 rule，跳出
+      if (!item) return false
       // 没有验证规则，直接判断是否为空
-      if (item.validates.length <= 0) {
+      if (item.length <= 0) {
         if (this.$checkIsEmpty(value)) {
           isBreak = true
           this.$addErrorTxt(errorTxt, isNormal)
         }
       } else {
-        item.validates.some(validate => {
+        // 循环规则
+        item.some(rule => {
           const isEmpty = this.$checkIsEmpty(value)
-          errorTxt = validate.message || errorTxt
-          // 必填 || 非必填 && 值不为空
-          if (validate.required || !isEmpty) {
-            if (this.$checkIsBaseType(validate.type)) {
-              if (validate.type === 'function' ? (validate.func && !validate.func(value) || isEmpty)
-                : !this.$validateDataOfBaseType(validate.type, value)) {
-                isBreak = true
-                this.$addErrorTxt(errorTxt, isNormal)
+          const { error, require, type, func, min, max } = rule
+          let isContinue = true
+          errorTxt = error || errorTxt
+          // 必填 || 值不为空
+          // 必填或者值不为空的，就需要校验
+          if (require || !isEmpty) {
+            const _type = this.$getType(type)
+            // 判断是否基本类型
+            if (_type) {
+              if (this.$checkIsBaseType(_type)) {
+                let isFail = false
+                if (!this.$validateDataOfBaseType(_type, value)) {
+                  isFail = true
+                }
+                if ((_type === 'string' || _type === 'number') && (min || max)) {
+                  if (_type === 'string') {
+                    // 判断长度
+                    const len = value.length
+                    if (min && max) {
+                      if (len < min || len > max) isFail = true
+                    } else if (min) {
+                      if (len < min) isFail = true
+                    } else if (max) {
+                      if (len > max) isFail = true
+                    }
+                  } else if (_type === 'number') {
+                    // 判断大小
+                    if (min && max) {
+                      if (value < min || value > max) isFail = true
+                    } else if (min) {
+                      if (value < min) isFail = true
+                    } else if (max) {
+                      if (value > max) isFail = true
+                    }
+                  }
+                }
+                if (isFail) {
+                  isBreak = true
+                  isContinue = false
+                  this.$addErrorTxt(errorTxt, isNormal)
+                }
               }
+              // 指定的验证方法
+            } else if (func) {
+              const error = func(value)
+              if (error) {
+                isBreak = true
+                isContinue = false
+                this.$addErrorTxt(error || errorTxt, isNormal)
+              }
+              // 判空
             } else if (isEmpty) {
               isBreak = true
+              isContinue = false
               this.$addErrorTxt(errorTxt, isNormal)
             }
           }
+          return !isContinue
         })
       }
+      // 如果是多错误类型的，一直循环下去
       if (!isNormal) return false
+      // 如果要跳出，不再循环
       if (isBreak) return true
     })
-    return isNormal ? this.errorTxt : this.errorTxtArray
-  },
-
-  $formatFromValueAndOptions(formObject, options) {
-    const tmp = this.$formatFormValueToObject(formObject)
-    Object.keys(options).forEach(option => {
-      if (tmp[option]) {
-        tmp[option].validates = options[option] || []
-      }
-    })
-    return tmp
-  },
-
-  $initParams(formObject, options, config) {
-    let data = {
-      form: {},
-      config: {}
+    const returnValue = isNormal ? (this.errorTxt) : this.errorTxtArray
+    return {
+      isSuccess: isNormal ? !returnValue : !returnValue.length,
+      errorTxt: returnValue
     }
-    try {
-      // 如果 formObject 不都是 object 类型，就查看 options 值
-      if (!this.$valdiateIsAllObject(formObject)) {
-        if (options && Array.isArray(this.$getObjectFirstValue(options))) {
-          // 合并 formObject 和 options
-          data.form = this.$formatFromValueAndOptions(formObject, options)
-          data.config = config || {}
-        } else {
-          // 如果 options 第一个值不是数组，默认为配置项
-          data.config = options || {}
-          data.form = this.$formatFormValueToObject(formObject)
-        }
-      } else {
-        // 第一个值的 validates 是数组，配置项就取 options
-        data.config = options || {}
-        data.form = formObject
-      }
-    } catch (error) {
-      console.warn(error)
-      return false
-    }
-    return data
-  },
-
-  $getObjectFirstValue(obj) {
-    let value = ''
-    Object.values(obj).some(v => {
-      value = v
-      return true
-    })
-    return value
-  },
-
-  $valdiateIsAllObject(object) {
-    return Object.values(object).every(v => Object.prototype.toString.call(v) === '[object Object]')
-  },
-
-  $formatFormValueToObject(object) {
-    const tmp = {}
-    Object.entries(object).forEach(v => {
-      tmp[v[0]] = {
-        value: v[1],
-        validates: []
-      }
-    })
-    return tmp
   },
 
   // null undefine false ''
@@ -140,7 +127,7 @@ ValidateForm.prototype = {
     return this.baseType.includes(type)
   },
 
-  $getEmptyPrompt(key) {
+  $getEmptyErrorPrompt(key) {
     return `${key} 不能为空`
   },
 
@@ -175,6 +162,16 @@ ValidateForm.prototype = {
     } else {
       this.errorTxtArray.push(errorTxt)
     }
+  },
+
+  // vuejs 里面的方法
+  $getType(fn) {
+    const match = fn && fn.toString().match(/^\s*function (\w+)/)
+    return match ? match[1].toLocaleLowerCase() : ''
+  },
+
+  setRules(rules) {
+    this.rules = rules
   }
 }
 
