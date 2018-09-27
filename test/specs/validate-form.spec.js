@@ -9,11 +9,10 @@ describe('validate-form', () => {
   describe('base', () => {
     it('check properties', () => {
       const Form = new ValidateForm({})
-      const { values, rules, outputType, isHaveError, errorTxt, errorTxtArray, baseType, baseTypeFunc } = Form
+      const { rules, outputType, errorTxt, errorTxtArray, baseType, baseTypeFunc } = Form
       // expect(values).to.be.an('object')
       expect(rules).to.be.an('object')
       expect(outputType).to.be.a('string')
-      expect(isHaveError).to.be.a('boolean')
       expect(errorTxt).to.be.a('string')
       expect(errorTxtArray).to.be.an('array')
       expect(baseType.join('')).to.equal(['string', 'number', 'boolean', 'object', 'array', 'function'].join(''))
