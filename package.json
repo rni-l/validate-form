@@ -1,7 +1,7 @@
 {
   "name": "validate-form",
   "version": "0.0.1",
-  "description": "",
+  "description": "this is a validate-form library",
   "main": "index.js",
   "scripts": {
     "unit": "cross-env NODE_ENV=test karma start test/karma.conf.js",
@@ -9,10 +9,15 @@
     "build": "cross-env NODE_ENV=production webpack"
   },
   "keywords": [
+    "javascript",
+    "validate",
+    "form",
+    "validate-form",
+    "Rni-l"
   ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git@github.com:rni-l/validate-form.git"
   },
   "author": "Rni-l",
   "license": "ISC",
