@@ -36,6 +36,7 @@ const output = isDevelopment ? {
       amd: pluginName,
       commonjs: pluginName
     },
+    globalObject: 'typeof self !== \'undefined\' ? self : this',
     libraryTarget: 'umd'
   }
 
