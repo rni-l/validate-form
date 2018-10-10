@@ -37,72 +37,64 @@ ValidateForm.prototype = {
     this.errorTxt = ''
     this.errorTxtArray = []
     // 循环数据
-    Object.keys(values).some(key => {
+    Object.keys(this.rules).some(key => {
       const item = this.rules[key]
       const value = values[key]
       // 默认错误信息
       let errorTxt = this.$getEmptyErrorPrompt(key)
       // 没有当前对象的 rule，跳出
-      if (!item) return false
+      // if (!item) return false
       // 没有验证规则，直接判断是否为空
-      if (item.length <= 0) {
-        if (this.$checkIsEmpty(value)) {
-          isBreak = true
-          this.$addErrorTxt(errorTxt, isNormal)
-        }
-      } else {
-        // 循环规则
-        item.some(rule => {
-          const isEmpty = this.$checkIsEmpty(value)
-          const { error, require, type, func, min, max } = rule
-          let isContinue = true
-          errorTxt = error || errorTxt
-          // 必填 || 值不为空
-          // 必填或者值不为空的，就需要校验
-          if (require || !isEmpty) {
-            const _type = this.$getType(type)
-            // 如果有传 type 值
-            if (_type) {
-              // 判断是否基本类型
-              if (this.$checkIsBaseType(_type)) {
-                let isFail = false
-                // 使用基本类型校验值
-                if (!this.$validateDataOfBaseType(_type, value)) isFail = true
-                // 如果上一步校验通过，且当前类型是 string 或 number，判断是否有 min 和 max 值
-                if (!isFail && (_type === 'string' || _type === 'number') && (min || max)) {
-                  // string 类型的，会判断字符串长度
-                  if (_type === 'string') {
-                    const len = value.length
-                    isFail = this.$validateStringValue(len, min, max)
-                    // number 类型会判断值的大小
-                  } else if (_type === 'number') {
-                    isFail = this.$validateNumberValue(value, min, max)
-                  }
+      item.some(rule => {
+        const isEmpty = this.$checkIsEmpty(value)
+        const { error, require, type, func, min, max } = rule
+        let isContinue = true
+        errorTxt = error || errorTxt
+        // 必填 || 值不为空
+        // 必填或者值不为空的，就需要校验
+        if (require || !isEmpty) {
+          const _type = this.$getType(type)
+          // 如果有传 type 值
+          if (_type) {
+            // 判断是否基本类型
+            if (this.$checkIsBaseType(_type)) {
+              let isFail = false
+              // 使用基本类型校验值
+              if (!this.$validateDataOfBaseType(_type, value)) isFail = true
+              // 如果上一步校验通过，且当前类型是 string 或 number，判断是否有 min 和 max 值
+              if (!isFail && (_type === 'string' || _type === 'number') && (min || max)) {
+                // string 类型的，会判断字符串长度
+                if (_type === 'string') {
+                  const len = value.length
+                  isFail = this.$validateStringValue(len, min, max)
+                  // number 类型会判断值的大小
+                } else if (_type === 'number') {
+                  isFail = this.$validateNumberValue(value, min, max)
                 }
-                if (isFail) {
-                  isBreak = true
-                  isContinue = false
-                  this.$addErrorTxt(errorTxt, isNormal)
-                }
-              } else {
-                // 如果不是基本类型，就 next 了
               }
-            } else {
-              let error = ''
-              // 指定的验证方法
-              if (func) error = func(value)
-              // 判空
-              else if (isEmpty) error = errorTxt
-              if (error) {
+              if (isFail) {
                 isBreak = true
                 isContinue = false
-                this.$addErrorTxt(error || errorTxt, isNormal)
+                this.$addErrorTxt(errorTxt, isNormal)
               }
+            } else {
+              // 如果不是基本类型，就 next 了
+            }
+          } else {
+            let error = ''
+            // 指定的验证方法
+            if (func) error = func(value)
+            // 判空
+            else if (isEmpty) error = errorTxt
+            if (error) {
+              isBreak = true
+              isContinue = false
+              this.$addErrorTxt(error || errorTxt, isNormal)
             }
           }
-          return !isContinue
-        })
-      }
+        }
+        return !isContinue
+      })
       // 如果是多错误类型的，一直循环下去
       if (!isNormal) return false
       // 如果要跳出，不再循环

@@ -279,8 +279,14 @@ describe('validate-form', () => {
         values.name = ''
         Form.setRules(rules)
         const res2 = Form.validate(values)
-        expect(res2.isSuccess).to.be.false
-        expect(res2.errorTxt).to.equal('name 不能为空')
+        expect(res2.isSuccess).to.be.true
+        expect(res2.errorTxt).to.equal('')
+      })
+      it('no value, but have rule', () => {
+        delete values.name
+        const { isSuccess, errorTxt } = Form.validate(values)
+        expect(isSuccess).to.be.false
+        expect(errorTxt).to.equal(rules.name[0].error)
       })
     })
   })

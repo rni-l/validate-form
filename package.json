@@ -1,6 +1,6 @@
 {
   "name": "easy-validate-form",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "this is a validate-form library",
   "main": "index.js",
   "scripts": {
