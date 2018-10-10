@@ -22,23 +22,20 @@ const defaultPlugin = [
 const entry = isDevelopment ? {
   app: path.resolve(rootPath, 'src', 'index.js')
 } : {
-    app: path.resolve(rootPath, 'src', `${pluginName}.js`)
-  }
+  app: path.resolve(rootPath, 'src', `${pluginName}.js`)
+}
 
 const output = isDevelopment ? {
   filename: 'index.js',
   path: path.resolve(rootPath, 'dist')
 } : {
-    filename: `${pluginName}.js`,
-    path: path.resolve(rootPath, 'dist'),
-    library: {
-      root: pluginName,
-      amd: pluginName,
-      commonjs: pluginName
-    },
-    globalObject: 'typeof self !== \'undefined\' ? self : this',
-    libraryTarget: 'umd'
-  }
+  filename: `${pluginName}.js`,
+  path: path.resolve(rootPath, 'dist'),
+  library: pluginName,
+  globalObject: 'typeof self !== \'undefined\' ? self : this',
+  libraryExport: 'default',
+  libraryTarget: 'umd'
+}
 
 const config = {
   mode: isDevelopment ? 'development' : 'production',
