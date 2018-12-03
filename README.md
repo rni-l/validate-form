@@ -9,7 +9,8 @@ import ValidateForm from './validate-form'
 
 // 生成一个对象
 // 并且传入 rules 规则
-const obj = new ValidateForm(rules)
+// opts 配置项
+const obj = new ValidateForm(rules, opts || {})
 
 // 校验
 const { isSuccess, errorTxt } = obj.validate(values)
@@ -60,4 +61,16 @@ const values = {
 // 返回 true or false
 obj.baseTypeFunc.isString('123')
 ```
+
+
+
+
+
+### opts 配置项
+
+| key        |  value   | default | description                                                  |
+| ---------- | :------: | ------- | ------------------------------------------------------------ |
+| outputType | {string} | normal  | 错误输出类型，默认返回单个信息；传'all' 返回一个数组，包含所有错误信息 |
+| mode       | {string} | all     | 验证模式，默认 all，校验 rules 里面所有对象的规则；传 'portion' 只检验传入检验的值 |
+|            |          |         |                                                              |
 

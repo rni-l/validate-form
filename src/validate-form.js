@@ -19,6 +19,12 @@ const ValidateForm = function(rules, opts = {}) {
   // 输出的错误信息
   this.errorTxt = ''
   this.errorTxtArray = []
+  /**
+   * mode: 验证模式
+   * all: 根据 rules 全验证
+   * portion: 根据 params 进行验证
+   */
+  this.mode = opts.mode || 'all'
 }
 
 ValidateForm.prototype = {
@@ -36,14 +42,15 @@ ValidateForm.prototype = {
     const isNormal = isMulitple ? false : this.outputType === 'normal'
     this.errorTxt = ''
     this.errorTxtArray = []
+    const mode = this.mode
     // 循环数据
     Object.keys(this.rules).some(key => {
       const item = this.rules[key]
       const value = values[key]
       // 默认错误信息
       let errorTxt = this.$getEmptyErrorPrompt(key)
-      // 没有当前对象的 rule，跳出
-      // if (!item) return false
+      // mode = portion 下，没有当前 value 对象，跳出
+      if (this.$isNull(value) && mode === 'portion') return false
       // 没有验证规则，直接判断是否为空
       item.some(rule => {
         const isEmpty = this.$checkIsEmpty(value)
@@ -107,9 +114,14 @@ ValidateForm.prototype = {
     }
   },
 
-  // null undefine false ''
+  // null undefined false ''
   $checkIsEmpty(value) {
     return (!!(!value && value !== 0))
+  },
+
+  // null or undefined
+  $isNull(value) {
+    return value === null || value === undefined
   },
 
   $checkIsBaseType(type) {

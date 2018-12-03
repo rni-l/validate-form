@@ -206,7 +206,6 @@ describe('validate-form', () => {
           delete rules.number[1].max
           rules.number[1].min = 2
           values.number = 1234567891234
-          console.log(rules.number[1])
           Form.setRules(rules)
           const res5 = Form.validate(values)
           expect(res5.isSuccess).to.be.true
@@ -287,6 +286,44 @@ describe('validate-form', () => {
         const { isSuccess, errorTxt } = Form.validate(values)
         expect(isSuccess).to.be.false
         expect(errorTxt).to.equal(rules.name[0].error)
+      })
+    })
+
+    describe('validate mode', () => {
+      let values = {}
+      beforeEach(() => {
+        values = {
+          name: 't1',
+          number: 1
+        }
+      })
+      it('validate portion rules', () => {
+        Form.mode = 'portion'
+        const firstResult = Form.validate(values)
+        expect(firstResult.isSuccess).to.be.true
+        expect(firstResult.errorTxt).to.be.empty
+        const secondResult = Form.validate(Object.assign(
+          {},
+          values,
+          { number: '' }
+        ))
+        expect(secondResult.isSuccess).to.be.false
+        expect(secondResult.errorTxt).to.equal(rules.number[0].error)
+      })
+
+      it('validate all rules', () => {
+        const firstResult = Form.validate(values)
+        expect(firstResult.isSuccess).to.be.false
+        expect(firstResult.errorTxt).to.equal(rules.array[0].error)
+        const secondResult = Form.validate({
+          name: 't1',
+          number: 1,
+          array: [],
+          object: {},
+          phone: '15625979634'
+        })
+        expect(secondResult.isSuccess).to.be.true
+        expect(secondResult.errorTxt).to.be.empty
       })
     })
   })
