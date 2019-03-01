@@ -3,6 +3,31 @@
  */
 import { baseType, baseTypeFunc } from './baseType'
 
+function validateDataOfBaseType(type, value) {
+  let result = ''
+  switch (type) {
+  case 'string':
+    result = baseTypeFunc.isString(value)
+    break
+  case 'boolean':
+    result = baseTypeFunc.isBoolean(value)
+    break
+  case 'number':
+    result = baseTypeFunc.isNumber(value)
+    break
+  case 'object':
+    result = baseTypeFunc.isObject(value)
+    break
+  case 'array':
+    result = baseTypeFunc.isArray(value)
+    break
+  default:
+    result = baseTypeFunc.isFunction(value)
+    break
+  }
+  return result
+}
+
 /**
  * @param Object opts 初始化配置
  * @param string opts.outputType 验证结果，输出类型
@@ -27,12 +52,15 @@ const ValidateForm = function(rules, opts = {}) {
   this.mode = opts.mode || 'all'
 }
 
+ValidateForm.validateDataOfBaseType = validateDataOfBaseType
+
 ValidateForm.prototype = {
   validate(values, isMulitple) {
     if (!this.$validateDataOfBaseType('object', values)) {
-      throw new Error('数据格式不正确')
+      console.log(new Error('数据格式不正确'))
       return {
-        isSuccess: false, errorTxt: '数据格式不正确'
+        isSuccess: false,
+        errorTxt: '数据格式不正确'
       }
     }
 
@@ -107,7 +135,7 @@ ValidateForm.prototype = {
       // 如果要跳出，不再循环
       if (isBreak) return true
     })
-    const returnValue = isNormal ? (this.errorTxt) : this.errorTxtArray
+    const returnValue = isNormal ? this.errorTxt : this.errorTxtArray
     return {
       isSuccess: isNormal ? !returnValue : !returnValue.length,
       errorTxt: returnValue
@@ -116,7 +144,7 @@ ValidateForm.prototype = {
 
   // null undefined false ''
   $checkIsEmpty(value) {
-    return (!!(!value && value !== 0))
+    return !!(!value && value !== 0)
   },
 
   // null or undefined
@@ -132,30 +160,7 @@ ValidateForm.prototype = {
     return `${key} 不能为空`
   },
 
-  $validateDataOfBaseType(type, value) {
-    let result = ''
-    switch (type) {
-    case 'string':
-      result = baseTypeFunc.isString(value)
-      break
-    case 'boolean':
-      result = baseTypeFunc.isBoolean(value)
-      break
-    case 'number':
-      result = baseTypeFunc.isNumber(value)
-      break
-    case 'object':
-      result = baseTypeFunc.isObject(value)
-      break
-    case 'array':
-      result = baseTypeFunc.isArray(value)
-      break
-    default:
-      result = baseTypeFunc.isFunction(value)
-      break
-    }
-    return result
-  },
+  $validateDataOfBaseType: validateDataOfBaseType,
 
   $addErrorTxt(errorTxt, isNormal) {
     if (isNormal) {

@@ -1,5 +1,101 @@
 import ValidateForm from './../../src/validate-form'
 
+const baseTypeList = {
+  string: [
+    { type: 'isString', value: '123', expect: 'true' },
+    { type: 'isString', value: null, expect: 'false' },
+    { type: 'isString', value: [], expect: 'false' },
+    { type: 'isString', value: {}, expect: 'false' },
+    { type: 'isString', value: '', expect: 'false' },
+    { type: 'isString', value: 123, expect: 'false' },
+    { type: 'isArray', value: 'undefined', expect: 'false' }
+  ],
+  boolean: [
+    { type: 'isBoolean', value: true, expect: 'true' },
+    { type: 'isBoolean', value: false, expect: 'true' },
+    { type: 'isBoolean', value: '123', expect: 'false' },
+    { type: 'isBoolean', value: null, expect: 'false' },
+    { type: 'isBoolean', value: [], expect: 'false' },
+    { type: 'isBoolean', value: {}, expect: 'false' },
+    { type: 'isBoolean', value: '', expect: 'false' },
+    { type: 'isBoolean', value: 123, expect: 'false' },
+    { type: 'isBoolean', value: 'undefined', expect: 'false' }
+  ],
+  number: [
+    { type: 'isNumber', value: '123', expect: 'false' },
+    { type: 'isNumber', value: '123n', expect: 'false' },
+    { type: 'isNumber', value: null, expect: 'false' },
+    { type: 'isNumber', value: [], expect: 'false' },
+    { type: 'isNumber', value: {}, expect: 'false' },
+    { type: 'isNumber', value: '', expect: 'false' },
+    { type: 'isNumber', value: 123, expect: 'true' },
+    { type: 'isNumber', value: 0, expect: 'true' },
+    { type: 'isNumber', value: -1, expect: 'true' },
+    { type: 'isNumber', value: 'undefined', expect: 'false' }
+  ],
+  array: [
+    { type: 'isArray', value: '123', expect: 'false' },
+    { type: 'isArray', value: null, expect: 'false' },
+    { type: 'isArray', value: [], expect: 'true' },
+    { type: 'isArray', value: {}, expect: 'false' },
+    { type: 'isArray', value: '', expect: 'false' },
+    { type: 'isArray', value: 123, expect: 'false' },
+    { type: 'isArray', value: 'undefined', expect: 'false' }
+  ],
+  object: [
+    { type: 'isObject', value: '123', expect: 'false' },
+    { type: 'isObject', value: null, expect: 'false' },
+    { type: 'isObject', value: [], expect: 'false' },
+    { type: 'isObject', value: {}, expect: 'true' },
+    { type: 'isObject', value: '', expect: 'false' },
+    { type: 'isObject', value: 123, expect: 'false' },
+    { type: 'isObject', value: 'undefined', expect: 'false' }
+  ],
+  function: [
+    { type: 'isFunction', value: () => {}, expect: 'true' },
+    { type: 'isFunction', value: '123', expect: 'false' },
+    { type: 'isFunction', value: null, expect: 'false' },
+    { type: 'isFunction', value: [], expect: 'false' },
+    { type: 'isFunction', value: {}, expect: 'false' },
+    { type: 'isFunction', value: '', expect: 'false' },
+    { type: 'isFunction', value: 123, expect: 'false' },
+    { type: 'isFunction', value: 'undefined', expect: 'false' }
+  ]
+}
+
+function validateBase(data, validate, isStatic) {
+  function changeType(type) {
+    return !isStatic ? type : type.slice(2).toLowerCase()
+  }
+  data.forEach(rule => {
+    expect(validate(changeType(rule.type), rule.value)).to.be[rule.expect]
+  })
+}
+
+function checkString(validate, isStatic) {
+  validateBase(baseTypeList.string, validate, isStatic)
+}
+
+function checkBoolean(validate, isStatic) {
+  validateBase(baseTypeList.boolean, validate, isStatic)
+}
+
+function checkNumber(validate, isStatic) {
+  validateBase(baseTypeList.number, validate, isStatic)
+}
+
+function checkArray(validate, isStatic) {
+  validateBase(baseTypeList.array, validate, isStatic)
+}
+
+function checkObject(validate, isStatic) {
+  validateBase(baseTypeList.object, validate, isStatic)
+}
+
+function checkFunction(validate, isStatic) {
+  validateBase(baseTypeList.function, validate, isStatic)
+}
+
 describe('validate-form', () => {
   // let Form = {}
   // beforeEach(() => {
@@ -33,24 +129,15 @@ describe('validate-form', () => {
     let rules = {}
     beforeEach(() => {
       rules = {
-        name: [
-          { require: true, type: String, error: '请输入name' },
-          { require: true, type: String, min: 2, max: 10, error: '请输入 2 - 10 长度的 name' }
-        ],
-        number: [
-          { require: true, type: Number, error: '请输入 number' },
-          { require: true, type: Number, min: 1, max: 10, error: '请输入 1 - 10 的 number' }
-        ],
-        array: [
-          { require: true, type: Array, error: '请输入 array' }
-        ],
-        object: [
-          { require: true, type: Object, error: '请输入 object' }
-        ],
+        name: [{ require: true, type: String, error: '请输入name' }, { require: true, type: String, min: 2, max: 10, error: '请输入 2 - 10 长度的 name' }],
+        number: [{ require: true, type: Number, error: '请输入 number' }, { require: true, type: Number, min: 1, max: 10, error: '请输入 1 - 10 的 number' }],
+        array: [{ require: true, type: Array, error: '请输入 array' }],
+        object: [{ require: true, type: Object, error: '请输入 object' }],
         phone: [
           { require: true, error: '请输入手机号' },
           {
-            require: true, func: (value) => {
+            require: true,
+            func: value => {
               if (/1\d{10}/.test(value)) return false
               return '请输入正确的手机号'
             }
@@ -302,11 +389,7 @@ describe('validate-form', () => {
         const firstResult = Form.validate(values)
         expect(firstResult.isSuccess).to.be.true
         expect(firstResult.errorTxt).to.be.empty
-        const secondResult = Form.validate(Object.assign(
-          {},
-          values,
-          { number: '' }
-        ))
+        const secondResult = Form.validate(Object.assign({}, values, { number: '' }))
         expect(secondResult.isSuccess).to.be.false
         expect(secondResult.errorTxt).to.equal(rules.number[0].error)
       })
@@ -336,65 +419,44 @@ describe('validate-form', () => {
     const validate = (type, value) => {
       return Form.baseTypeFunc[type](value)
     }
+    const staticValidate = (type, value) => {
+      return ValidateForm.validateDataOfBaseType(type, value)
+    }
     it('Validate string', () => {
-      expect(validate('isString', '123')).to.be.true
-      expect(validate('isString', null)).to.be.false
-      expect(validate('isString', [])).to.be.false
-      expect(validate('isString', {})).to.be.false
-      expect(validate('isString', '')).to.be.false
-      expect(validate('isString', 123)).to.be.false
-      expect(validate('isArray', undefined)).to.be.false
+      checkString(validate)
+    })
+    it('Validate string by static', () => {
+      checkString(staticValidate, 'static')
     })
     it('Validate boolean', () => {
-      expect(validate('isBoolean', true)).to.be.true
-      expect(validate('isBoolean', false)).to.be.true
-      expect(validate('isBoolean', null)).to.be.false
-      expect(validate('isBoolean', [])).to.be.false
-      expect(validate('isBoolean', {})).to.be.false
-      expect(validate('isBoolean', '')).to.be.false
-      expect(validate('isBoolean', '123')).to.be.false
-      expect(validate('isBoolean', undefined)).to.be.false
+      checkBoolean(validate)
+    })
+    it('Validate boolean by static', () => {
+      checkBoolean(staticValidate, 'static')
     })
     it('Validate number', () => {
-      expect(validate('isNumber', 123)).to.be.true
-      expect(validate('isNumber', 0)).to.be.true
-      expect(validate('isNumber', -1)).to.be.true
-      expect(validate('isNumber', '1234n')).to.be.false
-      expect(validate('isNumber', null)).to.be.false
-      expect(validate('isNumber', '123')).to.be.false
-      expect(validate('isNumber', [])).to.be.false
-      expect(validate('isNumber', '')).to.be.false
-      expect(validate('isNumber', {})).to.be.false
-      expect(validate('isNumber', undefined)).to.be.false
+      checkNumber(validate)
+    })
+    it('Validate number by static', () => {
+      checkNumber(staticValidate, 'static')
     })
     it('Validate array', () => {
-      expect(validate('isArray', [])).to.be.true
-      expect(validate('isArray', null)).to.be.false
-      expect(validate('isArray', '123')).to.be.false
-      expect(validate('isArray', {})).to.be.false
-      expect(validate('isArray', '')).to.be.false
-      expect(validate('isArray', 123)).to.be.false
-      expect(validate('isArray', undefined)).to.be.false
+      checkArray(validate)
+    })
+    it('Validate array by static', () => {
+      checkArray(staticValidate, 'static')
     })
     it('Validate object', () => {
-      expect(validate('isObject', {})).to.be.true
-      expect(validate('isObject', null)).to.be.false
-      expect(validate('isObject', '123')).to.be.false
-      expect(validate('isObject', [])).to.be.false
-      expect(validate('isObject', '')).to.be.false
-      expect(validate('isObject', 123)).to.be.false
-      expect(validate('isObject', undefined)).to.be.false
+      checkObject(validate)
+    })
+    it('Validate object by static', () => {
+      checkObject(staticValidate, 'static')
     })
     it('Validate function', () => {
-      expect(validate('isFunction', () => {})).to.be.true
-      expect(validate('isFunction', '1234n')).to.be.false
-      expect(validate('isFunction', null)).to.be.false
-      expect(validate('isFunction', '123')).to.be.false
-      expect(validate('isFunction', [])).to.be.false
-      expect(validate('isFunction', '')).to.be.false
-      expect(validate('isFunction', {})).to.be.false
-      expect(validate('isFunction', undefined)).to.be.false
+      checkFunction(validate)
+    })
+    it('Validate function by static', () => {
+      checkFunction(staticValidate, 'static')
     })
   })
-
 })
